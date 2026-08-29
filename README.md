@@ -8,32 +8,33 @@
 
 - `manifest.json` — Chrome MV3 清单（permissions: contextMenus / storage / activeTab / notifications；background 为 ES module）
 - `background.js` — background service worker：右键菜单创建/点击处理、`thunder://` 解码（`decodeThunder`）、NATS 发布、通知反馈
-- `nats-client.js` — vendor nats.ws 封装：`connectNats` / `publish` / `close` + 自动重连参数（user/pass 认证）
+- `nats-client.js` — 手写极简 NATS over WebSocket 客户端（V1 裁决：不用 nats.ws vendor，见下）
 - `storage.js` — `chrome.storage.local` 凭据持久化：`setCredentials` / `getCredentials` / `clearCredentials`
 - `popup.html` / `popup.js` — 绑定 UI 双状态（未绑定表单 / 已绑定设备信息 + 解绑）；V1 单设备，多设备与配对码 API 预留 SP-3 联调
-- `vendor/nats.ws.js` — nats.ws 钉版本（见下）
-- `tests/` — vitest 单测（thunder 解码 3 用例 + storage 读写往返）
+- `tests/` — vitest 单测（thunder 解码 3 用例 + storage 往返 2 + nats-client 3）
 - `icons/16.png` `icons/48.png` `icons/128.png` — 占位图标（#F59E0B 底 + 白色 "T"）
 
 零外链：运行时代码与页面无任何 http(s) 外链（审计命令见下）；图标全部 vendor 化，不引入外部字体。CRX 离线包由 Task 4.3 打包。
 
-## vendor/nats.ws.js 钉版本记录
+## nats-client.js 自实现说明（fix round 1 裁决）
 
-- 来源：unpkg `nats.ws@1.24.0` 的 `esm/nats.js`（原始包 sha256 见 Task 4.2 交付报告）
-- 构建：esbuild 从官方 esm 产物 tree-shake（仅 `connect` / `JSONCodec` 路径，user/pass 认证所需）+ minify；URL scheme 字面量做分段改写（语义不变，见报告）
-- 产物：`vendor/nats.ws.js`，164,866 B（161.0 KiB）
-- 产物 sha256：`9ac6d324cfae56900cf225187f559457fe15040d49eb84eb5044053610d45575`
-
-> 体积说明：官方原始 esm 产物实测 373,853 B（terser 178 KB），超过 V1 ≤80KB 预期；
-> 经裁决记录偏差，采用同版本 tree-shake 产物（见 Task 4.2 报告"体积冲突"一节）。
+- 裁决：移除 `vendor/nats.ws.js`（nats.ws@1.24.0 tree-shake 后仍需 161KiB），V1 改用手写极简
+  NATS 1.0 text protocol over WebSocket 客户端（子协议 `nats`），源码 ~6KB / minify 后 ~1.6KB。
+- 实现范围：CONNECT（user/pass，verbose:false）+ PING/PONG 握手、PUB（JSON payload，
+  字节数按 UTF-8 计）、INFO/PING/PONG/+OK/-ERR 帧处理、断线 2s 延迟自动重连。
+  V1 不引入 SUB/MSG、JetStream 协议（HPUB/ack）、heartbeat、async-batch。
+- JetStream 落盘：普通 PUB 落入 stream 捕获的 subject（`downloads.*` / `tinynas.downloads`）
+  即被 NATS Server 端 JetStream 自动持久化，无需客户端 JS 协议。
+- API：`connectNats(url, user, pass)` / `publish(subject, payload)` / `close()` /
+  `isConnected()` / `onError(fn)`。
 
 ## 本地验证
 
 ```bash
 export PATH="$HOME/.nvm/versions/node/v24.18.0/bin:$PATH"
 npm install --save-dev --no-package-lock vitest   # 唯一 devDependency
-npm test                                           # vitest run：2 文件 5 用例
-node --check background.js nats-client.js storage.js popup.js vendor/nats.ws.js
+npm test                                           # vitest run：3 文件 8 用例
+node --check background.js nats-client.js storage.js popup.js
 # 零外链审计（须 0 命中；manifest.json 权限声明为标准字段，不含 URL 字面量）
 grep -rE 'https?://' . --include='*.js' --include='*.html' --include='*.json' \
   --exclude-dir=node_modules --exclude-dir=.git
