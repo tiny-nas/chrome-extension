@@ -2,11 +2,51 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <style>body{width:240px;font-family:system-ui,sans-serif;padding:12px}.tip{color:#92400e;background:#FEF3C7;border-radius:6px;padding:8px}</style>
+  <style>
+    body { width: 280px; font-family: system-ui, sans-serif; padding: 12px; margin: 0; }
+    h1 { font-size: 15px; margin: 0 0 10px; }
+    label { display: block; font-size: 12px; color: #444; margin-top: 8px; }
+    input { width: 100%; box-sizing: border-box; padding: 5px 6px; border: 1px solid #d4d4d4; border-radius: 6px; font-size: 12px; }
+    button { margin-top: 12px; width: 100%; padding: 7px; border: 0; border-radius: 6px; background: #F59E0B; color: #fff; font-size: 13px; cursor: pointer; }
+    button.ghost { background: #e5e5e5; color: #333; }
+    .tip { color: #92400e; background: #FEF3C7; border-radius: 6px; padding: 8px; font-size: 12px; }
+    .ok { color: #065f46; background: #D1FAE5; border-radius: 6px; padding: 8px; font-size: 12px; }
+    .device { margin-top: 8px; font-size: 12px; color: #333; line-height: 1.7; word-break: break-all; }
+    .err { color: #b91c1c; font-size: 12px; margin-top: 8px; min-height: 1em; }
+    .hidden { display: none; }
+  </style>
 </head>
 <body>
   <h1>锦盒 TinyNAS 推送助手</h1>
-  <p class="tip" id="status">未绑定设备，请先在锦盒 NAS 控制台完成配对。</p>
-  <script src="popup.js"></script>
+
+  <!-- 状态一：未绑定 -->
+  <section id="unbound" class="hidden">
+    <p class="tip">未绑定设备。请填写锦盒 NAS 控制台「设备接入」页显示的连接信息完成绑定。</p>
+    <form id="bind-form">
+      <label for="device_id">设备 ID</label>
+      <input id="device_id" required placeholder="例如 tinynas-home-01">
+      <label for="nats_url">NATS 地址（ws:// 或 wss://）</label>
+      <input id="nats_url" required placeholder="例如 wss://192.168.1.10:9222">
+      <label for="nats_user">NATS 用户名</label>
+      <input id="nats_user" required>
+      <label for="nats_pass">NATS 密码</label>
+      <input id="nats_pass" type="password" required>
+      <label for="publish_subject">推送 subject（默认即可）</label>
+      <input id="publish_subject" value="tinynas.downloads">
+      <label for="target_dir">下载目录（默认即可）</label>
+      <input id="target_dir" value="/mnt/usb/Downloads">
+      <p class="err" id="error"></p>
+      <button type="submit">绑定</button>
+    </form>
+  </section>
+
+  <!-- 状态二：已绑定（V1 单设备展示；多设备列表见 popup.js SP-3 注释） -->
+  <section id="bound" class="hidden">
+    <p class="ok">已绑定锦盒设备</p>
+    <div class="device" id="device-info"></div>
+    <button type="button" class="ghost" id="unbind">解除绑定</button>
+  </section>
+
+  <script type="module" src="popup.js"></script>
 </body>
 </html>

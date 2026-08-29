@@ -1,0 +1,13 @@
+{
+  "name": "tinynas-chrome-extension",
+  "version": "1.0.0",
+  "description": "锦盒 TinyNAS 推送助手 — Chrome MV3 扩展",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "type": "module",
+  "devDependencies": {
+    "vitest": "^4.1.11"
+  },
+  "private": true
+}

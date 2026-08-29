@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "description": "右键推送下载链接到家里的锦盒 NAS（锦盒 TinyNAS 浏览器插件分支）",
   "icons": { "16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png" },
-  "permissions": ["contextMenus", "storage", "activeTab"],
+  "permissions": ["contextMenus", "storage", "activeTab", "notifications"],
   "host_permissions": ["<all_urls>"],
-  "background": { "service_worker": "service_worker.js" },
+  "background": { "service_worker": "background.js", "type": "module" },
   "action": { "default_popup": "popup.html", "default_title": "锦盒 TinyNAS 推送助手" }
 }
